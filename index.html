@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>SMART CITY MONITORING SYSTEM</h1>
+    </div>
+    
+    <div class="info-container">
+        <div class="info-box">
+            <h2 id="temperature">--°</h2>
+            <p>🌡️ Temperature</p>
+        </div>
+        <div class="info-box">
+            <h2 id="humidity">--%</h2>
+            <p>💧 Humidity</p>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+    
+    <div class="table-container">
+        <h2>Sensor Data</h2>
+        <table id="csvTable">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Temperature (°C)</th>
+                    <th>Humidity (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const csvFileUrl = "http://172.25.31.26:8000/sensor_data.csv"; 
+        let temperatureData = [];
+        let humidityData = [];
+        let labels = [];
+        let temperatureChart;
+
+        async function fetchData() {
+            try {
+                const response = await fetch(csvFileUrl);
+                const data = await response.text();
+
+                const rows = data.split("\n").filter(row => row);
+                labels = [];
+                temperatureData = [];
+                humidityData = [];
+
+                
+                const tableBody = document.querySelector("#csvTable tbody");
+                tableBody.innerHTML = '';
+
+                rows.forEach((row, index) => {
+                    const [timestamp, temperature, humidity] = row.split(","); 
+                    if (index === 0) return;  
+                    
+                    if (index === 1) {
+                        document.getElementById("temperature").innerText = `${parseFloat(temperature).toFixed(1)}°`;
+                        document.getElementById("humidity").innerText = `${parseFloat(humidity).toFixed(1)}%`;
+                    }
+
+                    labels.push(timestamp.trim());
+                    temperatureData.push(parseFloat(temperature.trim()));
+                    humidityData.push(parseFloat(humidity.trim()));
+
+                    
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                        <td>${timestamp.trim()}</td>
+                        <td>${isNaN(temperature) ? "--" : parseFloat(temperature).toFixed(1)}°</td>
+                        <td>${isNaN(humidity) ? "--" : parseFloat(humidity).toFixed(1)}%</td>
+                    `;
+                    tableBody.appendChild(newRow);
+                });
+
+                updateChart();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function createChart() {
+            const ctx = document.getElementById("temperatureChart").getContext("2d");
+            temperatureChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Temperature (°C)",
+                            data: temperatureData,
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            backgroundColor: "rgba(255, 99, 132, 0.2)",
+                            fill: true,
+                        },
+                        {
+                            label: "Humidity (%)",
+                            data: humidityData,
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            backgroundColor: "rgba(54, 162, 235, 0.2)",
+                            fill: true,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Timestamp",
+                            },
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Value",
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function updateChart() {
+            if (!temperatureChart) {
+                createChart();
+            } else {
+                temperatureChart.data.labels = labels;
+                temperatureChart.data.datasets[0].data = temperatureData;
+                temperatureChart.data.datasets[1].data = humidityData;
+                temperatureChart.update();
+            }
+        }
+
+       
+        createChart();
+        fetchData();
+        setInterval(fetchData, 5000);  
+    </script>
+</body>
+</html>
