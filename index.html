@@ -25,22 +25,6 @@
     <div class="chart-container">
         <canvas id="temperatureChart"></canvas>
     </div>
-    
-    <div class="table-container">
-        <h2>Sensor Data</h2>
-        <table id="csvTable">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Temperature (°C)</th>
-                    <th>Humidity (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                
-            </tbody>
-        </table>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -60,13 +44,9 @@
                 temperatureData = [];
                 humidityData = [];
 
-                
-                const tableBody = document.querySelector("#csvTable tbody");
-                tableBody.innerHTML = '';
-
                 rows.forEach((row, index) => {
                     const [timestamp, temperature, humidity] = row.split(","); 
-                    if (index === 0) return;  
+                    if (index === 0) return;  // Skip header row
                     
                     if (index === 1) {
                         document.getElementById("temperature").innerText = `${parseFloat(temperature).toFixed(1)}°`;
@@ -76,15 +56,6 @@
                     labels.push(timestamp.trim());
                     temperatureData.push(parseFloat(temperature.trim()));
                     humidityData.push(parseFloat(humidity.trim()));
-
-                    
-                    const newRow = document.createElement("tr");
-                    newRow.innerHTML = `
-                        <td>${timestamp.trim()}</td>
-                        <td>${isNaN(temperature) ? "--" : parseFloat(temperature).toFixed(1)}°</td>
-                        <td>${isNaN(humidity) ? "--" : parseFloat(humidity).toFixed(1)}%</td>
-                    `;
-                    tableBody.appendChild(newRow);
                 });
 
                 updateChart();
